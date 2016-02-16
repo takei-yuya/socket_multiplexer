@@ -27,7 +27,7 @@
       -a -S /tmp/socket_multiplexer ]; then
 
       # このセッションのSSH_AUTH_SOCKをsocket_multiplexerに追加
-      nc -U /tmp/socket_multiplexer_control <<<"ADD ${SSH_AUTH_SOCK}"
+      nc -U /tmp/socket_multiplexer_control <<<"ADD ${SSH_AUTH_SOCK}" >/dev/null
 
       # 念のためSSH_AUTH_SOCKのバックアップをとって
       ORIGINAL_SSH_AUTH_SOCK="${SSH_AUTH_SOCK}"
