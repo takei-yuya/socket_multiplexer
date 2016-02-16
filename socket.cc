@@ -1,9 +1,9 @@
 #include "socket.h"
-#include <signal.h>
 
-void IgnoreSigPipe() {
-  signal(SIGPIPE, SIG_IGN);
-}
+#include <sys/socket.h>
+#include <sys/un.h>
+
+#include <functional>
 
 int CreateSocket(const std::string& socket_name) {
   int sock = NoINTR([&](){ return socket(PF_LOCAL, SOCK_STREAM, 0); });

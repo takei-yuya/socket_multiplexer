@@ -2,12 +2,7 @@
 #define SOCKET_MULTIPLEXER_SOCKET_H_
 
 #include <unistd.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <errno.h>
-
 #include <string>
-#include <functional>
 
 template <typename F>
 int NoINTR(F f) {

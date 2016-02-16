@@ -1,4 +1,4 @@
-SRCS= socket_multiplexer.cc socket.cc
+SRCS= main.cc socket_multiplexer.cc socket.cc
 OBJS= $(SRCS:.cc=.o)
 BIN= socket_multiplexer
 
