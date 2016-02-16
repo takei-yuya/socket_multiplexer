@@ -6,6 +6,7 @@
     - check connected user
     - security
     - avoid socket inf loop when connect localhost or cyclic ssh
+        - random choose slave socket OR allow only one connection per slave socket at once?
 
 # かんたんなつかいかた (with ssh-agent)
 
