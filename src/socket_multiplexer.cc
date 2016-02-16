@@ -12,8 +12,15 @@ SocketMultiplexer::SocketMultiplexer(const Config& config)
 }
 
 SocketMultiplexer::~SocketMultiplexer() {
-  NoINTR([&](){ return close(master_socket_); });
-  NoINTR([&](){ return close(control_socket_); });
+  if (master_socket_ != -1) {
+    NoINTR([&](){ return close(master_socket_); });
+    NoINTR([&](){ return unlink(config_.master_socket_path.c_str()); });
+  }
+
+  if (control_socket_ != -1) {
+    NoINTR([&](){ return close(control_socket_); });
+    NoINTR([&](){ return unlink(config_.control_socket_path.c_str()); });
+  }
 }
 
 void SocketMultiplexer::Run() {
@@ -85,6 +92,9 @@ void SocketMultiplexer::ControlLoop() {
 
   while (true) {
     int control_fd = AcceptSocket(control_socket_);
+    if (control_fd == -1 && errno == EINVAL) {
+      break;
+    }
     std::cout << "AcceptSocket: " << control_fd << std::endl;
     if (control_fd == -1) {
       perror("AcceptSocket()");
