@@ -1,5 +1,5 @@
-#ifndef SOCKET_MULTIPLEXER_SOCKET_H_
-#define SOCKET_MULTIPLEXER_SOCKET_H_
+#ifndef SOCKET_MULTIPLEXER_SOCKET_UTILS_H_
+#define SOCKET_MULTIPLEXER_SOCKET_UTILS_H_
 
 #include <unistd.h>
 #include <string>

@@ -4,7 +4,7 @@
 #include <sstream>
 
 #include "socket_multiplexer.h"
-#include "socket.h"
+#include "socket_utils.h"
 
 SocketMultiplexer::SocketMultiplexer(const Config& config)
   : config_(config), slave_socket_files_()
