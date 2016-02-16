@@ -5,6 +5,7 @@
     - systemd recipe
     - check connected user
     - security
+    - avoid socket inf loop when connect localhost or cyclic ssh
 
 # かんたんなつかいかた (with ssh-agent)
 
