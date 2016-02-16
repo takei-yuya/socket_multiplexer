@@ -2,6 +2,7 @@
 #include <signal.h>
 
 #include "socket_multiplexer.h"
+#include "config.h"
 
 std::unique_ptr<SocketMultiplexer> socket_multiplexer;
 
