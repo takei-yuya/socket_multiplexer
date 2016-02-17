@@ -75,6 +75,7 @@ int main(int argc, char** argv) {
 
   socket_multiplexer->Run();
   socket_multiplexer->Wait();
+
   socket_multiplexer.reset();
 }
 

@@ -8,6 +8,7 @@
 
 SocketMultiplexer::SocketMultiplexer(const Config& config)
   : config_(config), slave_socket_files_()
+  , rand_(std::random_device()())
   , master_socket_(-1), control_socket_(-1) {
 }
 
@@ -48,6 +49,13 @@ int SocketMultiplexer::TryConnectActiveSocket() {
 
   while (slave_socket_files_.size() > 0) {
     auto it = slave_socket_files_.cbegin();
+    {
+      std::uniform_int_distribution<int> selector(0, slave_socket_files_.size() - 1);
+      for (int i = 0; i < selector(rand_); ++i) {
+        ++it;
+      }
+    }
+
     int fd = ConnectSocket(*it);
     if (fd < 0) {
       std::cout << "Rusted socket " << *it << std::endl;
@@ -102,7 +110,6 @@ void SocketMultiplexer::ControlLoop() {
     }
     while (true) {
       int recved = recv(control_fd, buf, 1024, 0);
-      std::cout << "recved = " << recved << std::endl;
       if (recved < 0) {
         perror("recv");
         close(control_fd);

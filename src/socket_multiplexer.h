@@ -4,6 +4,7 @@
 #include <mutex>
 #include <thread>
 #include <unordered_set>
+#include <random>
 
 class SocketMultiplexer {
 public:
@@ -38,6 +39,8 @@ private:
   const Config config_;
   mutable std::mutex slave_socket_files_lock_;
   std::unordered_set<std::string> slave_socket_files_;
+
+  mutable std::mt19937 rand_;
 
   int master_socket_;
   int control_socket_;

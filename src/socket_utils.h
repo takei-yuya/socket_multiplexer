@@ -15,8 +15,6 @@ int NoINTR(F f) {
   }
 }
 
-void IgnoreSigPipe();
-
 int CreateSocket(const std::string& socket_name);
 int ConnectSocket(const std::string& socket_name);
 int AcceptSocket(int socket);
