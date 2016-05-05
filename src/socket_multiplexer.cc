@@ -103,7 +103,6 @@ void SocketMultiplexer::ControlLoop() {
     if (control_fd == -1 && errno == EINVAL) {
       break;
     }
-    std::cout << "AcceptSocket: " << control_fd << std::endl;
     if (control_fd == -1) {
       perror("AcceptSocket()");
       break;
@@ -134,9 +133,8 @@ void SocketMultiplexer::ControlLoop() {
 std::string SocketMultiplexer::DispatchCommand(const std::string& line) {
   std::istringstream iss(line);
   std::string command, arg;
-  iss >> command >> arg;
-
-  std::cout << "Command: " << command << " " << arg << std::endl;
+  iss >> command >> std::ws;
+  std::getline(iss, arg);
 
   if (command == "QUIT") {
     return Shutdown();

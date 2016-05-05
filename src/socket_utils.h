@@ -16,8 +16,8 @@ int NoINTR(F f) {
 }
 
 int CreateSocket(const std::string& socket_name);
-int ConnectSocket(const std::string& socket_name);
 int AcceptSocket(int socket);
+int ConnectSocket(const std::string& socket_name);
 void SocketCoupler(int fd1, int fd2);
 
 #endif

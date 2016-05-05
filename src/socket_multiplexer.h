@@ -15,6 +15,7 @@ public:
 
   SocketMultiplexer() = delete;
   SocketMultiplexer(SocketMultiplexer&) = delete;
+  SocketMultiplexer& operator=(const SocketMultiplexer&) = delete;
 
   SocketMultiplexer(const Config& config);
 

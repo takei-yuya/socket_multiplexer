@@ -26,6 +26,11 @@ int CreateSocket(const std::string& socket_name) {
   return sock;
 }
 
+int AcceptSocket(int socket) {
+  int fd = NoINTR([&](){ return accept(socket, NULL, NULL); });
+  return fd;
+}
+
 int ConnectSocket(const std::string& socket_name) {
   int sock = NoINTR([&](){ return socket(PF_LOCAL, SOCK_STREAM, 0); });
   if (sock < 0) {
@@ -41,11 +46,6 @@ int ConnectSocket(const std::string& socket_name) {
   }
 
   return sock;
-}
-
-int AcceptSocket(int socket) {
-  int fd = NoINTR([&](){ return accept(socket, NULL, NULL); });
-  return fd;
 }
 
 void SocketCoupler(int fd1, int fd2) {
