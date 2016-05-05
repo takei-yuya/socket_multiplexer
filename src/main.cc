@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
   struct option long_options[] = {
     { "control",  required_argument,  0,  'c' },
     { "socket",   required_argument,  0,  's' },
-    { "help",     no_argument,        0,  '?' },
+    { "help",     no_argument,        0,  '!' },
     { "version",  no_argument,        0,  'v' },
     { 0, 0, 0, 0 }
   };
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
       config.master_socket_path = optarg;
       break;
 
-    case '?':
+    case '!':
       Usage(std::cout, argc, argv);
       exit(0);
 
