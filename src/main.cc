@@ -20,7 +20,7 @@ void Usage(std::ostream& out, int argc, char** argv) {
     << "  -c, --control=PATH    control socket path (default: " << kDefaultControlSocketFile << ")" << std::endl
     << "  -s, --socket=PATH     interface socket path (default: " << kDefaultMasterSocketFile << ")" << std::endl
     << std::endl
-    << "  -?, --help            display this help and exit" << std::endl
+    << "      --help            display this help and exit" << std::endl
     << "  -v, --version         output version information and exit" << std::endl
   ;
 }
@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
   };
 
   while (true) {
-    int ch = getopt_long(argc, argv, "?vc:s:", long_options, NULL);
+    int ch = getopt_long(argc, argv, "vc:s:", long_options, NULL);
     if (ch < 0) {
       break;
     }
