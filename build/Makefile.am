@@ -1,5 +1,7 @@
 bin_PROGRAMS= socket_multiplexer
 
+AM_CXXFLAGS= -Wall -Wextra
+
 socket_multiplexer_SOURCES = \
   $(top_srcdir)/src/main.cc \
   $(top_srcdir)/src/socket_multiplexer.cc \

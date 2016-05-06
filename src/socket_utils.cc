@@ -6,16 +6,16 @@
 #include <functional>
 
 int CreateSocket(const std::string& socket_name) {
-  int sock = NoINTR([&](){ return socket(PF_LOCAL, SOCK_STREAM, 0); });
+  int sock = NoINTR([&](){ return socket(AF_UNIX, SOCK_STREAM, 0); });
   if (sock < 0) {
     return -1;
   }
 
-  struct sockaddr_un addr = { 0 };
+  struct sockaddr_un addr;
   addr.sun_family = AF_UNIX;
   socket_name.copy(addr.sun_path, sizeof(addr.sun_path));
 
-  if (NoINTR([&](){ return bind(sock, (struct sockaddr*)&addr, sizeof(addr)); }) != 0) {
+  if (NoINTR([&](){ return bind(sock, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)); }) != 0) {
     return -1;
   }
 
@@ -32,16 +32,16 @@ int AcceptSocket(int socket) {
 }
 
 int ConnectSocket(const std::string& socket_name) {
-  int sock = NoINTR([&](){ return socket(PF_LOCAL, SOCK_STREAM, 0); });
+  int sock = NoINTR([&](){ return socket(AF_UNIX, SOCK_STREAM, 0); });
   if (sock < 0) {
     return -1;
   }
 
-  struct sockaddr_un addr = { 0 };
+  struct sockaddr_un addr;
   addr.sun_family = AF_UNIX;
   socket_name.copy(addr.sun_path, sizeof(addr.sun_path));
 
-  if (NoINTR([&](){ return connect(sock, (struct sockaddr*)&addr, sizeof(addr)); }) != 0) {
+  if (NoINTR([&](){ return connect(sock, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)); }) != 0) {
     return -1;
   }
 

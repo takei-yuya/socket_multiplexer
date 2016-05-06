@@ -13,7 +13,7 @@ const std::string kDefaultMasterSocketFile = "/tmp/socket_multiplexer";
 
 std::unique_ptr<SocketMultiplexer> socket_multiplexer;
 
-void Usage(std::ostream& out, int argc, char** argv) {
+void Usage(std::ostream& out, int /* argc */, char** argv) {
   out
     << "Usage: " << argv[0] << std::endl
     << std::endl
@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
   socket_multiplexer.reset(new SocketMultiplexer(config));
 
   signal(SIGPIPE, SIG_IGN);
-  signal(SIGINT, [](int sig){ socket_multiplexer->Shutdown(); });
+  signal(SIGINT, [](int /* sig */){ socket_multiplexer->Shutdown(); });
 
   socket_multiplexer->Run();
   socket_multiplexer->Wait();
