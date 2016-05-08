@@ -7,9 +7,11 @@
 #include "socket_utils.h"
 
 SocketMultiplexer::SocketMultiplexer(const Config& config)
-  : config_(config), slave_socket_files_()
+  : config_(config)
+  , slave_socket_files_lock_(), slave_socket_files_()
   , rand_(std::random_device()())
-  , master_socket_(-1), control_socket_(-1) {
+  , master_socket_(-1), control_socket_(-1)
+  , master_thread_(), control_thread_() {
 }
 
 SocketMultiplexer::~SocketMultiplexer() {

@@ -1,6 +1,6 @@
 bin_PROGRAMS= socket_multiplexer
 
-AM_CXXFLAGS= -Wall -Wextra
+AM_CXXFLAGS= -Wall -Wextra -Weffc++ -Wno-missing-field-initializers
 
 socket_multiplexer_SOURCES = \
   $(top_srcdir)/src/main.cc \

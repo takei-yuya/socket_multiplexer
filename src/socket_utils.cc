@@ -11,7 +11,7 @@ int CreateSocket(const std::string& socket_name) {
     return -1;
   }
 
-  struct sockaddr_un addr;
+  struct sockaddr_un addr = { 0 };
   addr.sun_family = AF_UNIX;
   socket_name.copy(addr.sun_path, sizeof(addr.sun_path));
   addr.sun_path[std::min(socket_name.size(), sizeof(addr.sun_path))] = '\0';
@@ -38,7 +38,7 @@ int ConnectSocket(const std::string& socket_name) {
     return -1;
   }
 
-  struct sockaddr_un addr;
+  struct sockaddr_un addr = { 0 };
   addr.sun_family = AF_UNIX;
   socket_name.copy(addr.sun_path, sizeof(addr.sun_path));
   addr.sun_path[std::min(socket_name.size(), sizeof(addr.sun_path))] = '\0';
