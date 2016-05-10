@@ -134,6 +134,10 @@ int PeekSocketCredentials(int fd, int *pid, int *uid, int *gid) {
   for (struct cmsghdr *cmptr = CMSG_FIRSTHDR(&msg); cmptr != NULL; cmptr = CMSG_NXTHDR(&msg, cmptr)) {
     if (cmptr->cmsg_level == SOL_SOCKET && cmptr->cmsg_type == SCM_CREDENTIALS) {
       struct ucred *uc = reinterpret_cast<struct ucred *>(CMSG_DATA(cmptr));
+      if (uc->pid == 0) {
+        // empty data
+        return -1;
+      }
       if (pid) *pid = uc->pid;
       if (uid) *uid = uc->uid;
       if (gid) *gid = uc->gid;
