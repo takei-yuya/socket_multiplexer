@@ -4,6 +4,7 @@
 #include <mutex>
 #include <thread>
 #include <unordered_set>
+#include <unordered_map>
 #include <random>
 
 class SocketMultiplexer {
@@ -26,20 +27,22 @@ public:
   std::string Shutdown();
 
 private:
-  int TryConnectActiveSocket();
+  int TryConnectActiveSocket(int uid);
 
   void MainLoop();
   void ControlLoop();
 
-  std::string DispatchCommand(const std::string& line);
-  std::string AddSocket(const std::string& socket);
-  std::string DeleteSocket(const std::string& socket);
-  std::string ClearSocket();
-  std::string ListSocket() const;
+  std::string DispatchCommand(int uid, const std::string& line);
+  std::string AddSocket(int uid, const std::string& socket);
+  std::string DeleteSocket(int uid, const std::string& socket);
+  std::string ClearSocket(int uid);
+  std::string ListSocket(int uid) const;
 
   const Config config_;
-  mutable std::mutex slave_socket_files_lock_;
-  std::unordered_set<std::string> slave_socket_files_;
+  typedef std::unordered_set<std::string> Files;
+  typedef std::unordered_map<int, Files> FilesMap;
+  mutable std::mutex slave_files_map_lock_;
+  FilesMap slave_files_map_;
 
   mutable std::mt19937 rand_;
 

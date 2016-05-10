@@ -2,6 +2,7 @@
 
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/stat.h>
 
 #include <functional>
 
@@ -16,6 +17,13 @@ int CreateSocket(const std::string& socket_name) {
   socket_name.copy(addr.sun_path, sizeof(addr.sun_path));
   addr.sun_path[std::min(socket_name.size(), sizeof(addr.sun_path))] = '\0';
 
+  {
+    int one = 1;
+    if (setsockopt(sock, SOL_SOCKET, SO_PASSCRED, &one, sizeof(one)) != 0) {
+      return -1;
+    }
+  }
+
   if (NoINTR([&](){ return bind(sock, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)); }) != 0) {
     return -1;
   }
@@ -23,6 +31,8 @@ int CreateSocket(const std::string& socket_name) {
   if (NoINTR([&](){ return listen(sock, 16); }) != 0) {
     return -1;
   }
+
+  chmod(addr.sun_path, 0777);
 
   return sock;
 }
@@ -87,7 +97,48 @@ void SocketCoupler(int fd1, int fd2) {
       break;
     }
   }
-  close(fd1);
-  close(fd2);
 }
 
+int SelectOne(int fd) {
+  fd_set rfds;
+  FD_ZERO(&rfds);
+  FD_SET(fd, &rfds);
+
+  return NoINTR([&](){ return select(fd + 1, &rfds, NULL, NULL, NULL); });
+}
+
+#include <iostream>
+
+int PeekSocketCredentials(int fd, int *pid, int *uid, int *gid) {
+  union {
+    struct cmsghdr cmsg;
+    // FIXME: Sender will not send SCM_RIGHTS, but alloc some bytes to recv SCM_CREDENTIALS in just case.
+    char cmsg_buf[CMSG_SPACE(sizeof(struct ucred) + 16 * sizeof(int))];
+  } cmsg_un = { 0 };
+
+  struct msghdr msg = { 0 };
+  msg.msg_name = NULL;
+  msg.msg_namelen = 0;
+  msg.msg_iov = NULL;
+  msg.msg_iovlen = 0;
+  msg.msg_control = &cmsg_un.cmsg_buf;
+  msg.msg_controllen = sizeof(cmsg_un.cmsg_buf);
+  msg.msg_flags = 0;
+
+  SelectOne(fd);
+  int recved = NoINTR([&]() { return recvmsg(fd, &msg, 0); });
+  if (recved < 0) {
+    return  -1;
+  }
+
+  for (struct cmsghdr *cmptr = CMSG_FIRSTHDR(&msg); cmptr != NULL; cmptr = CMSG_NXTHDR(&msg, cmptr)) {
+    if (cmptr->cmsg_level == SOL_SOCKET && cmptr->cmsg_type == SCM_CREDENTIALS) {
+      struct ucred *uc = reinterpret_cast<struct ucred *>(CMSG_DATA(cmptr));
+      if (pid) *pid = uc->pid;
+      if (uid) *uid = uc->uid;
+      if (gid) *gid = uc->gid;
+    }
+  }
+
+  return 0;
+}
