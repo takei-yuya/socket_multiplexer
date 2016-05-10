@@ -20,4 +20,7 @@ int AcceptSocket(int socket);
 int ConnectSocket(const std::string& socket_name);
 void SocketCoupler(int fd1, int fd2);
 
+int SelectOne(int fd);
+int PeekSocketCredentials(int fd, int *pid, int *uid, int *gid);
+
 #endif

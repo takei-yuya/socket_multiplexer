@@ -8,7 +8,7 @@
 
 SocketMultiplexer::SocketMultiplexer(const Config& config)
   : config_(config)
-  , slave_socket_files_lock_(), slave_socket_files_()
+  , slave_files_map_lock_(), slave_files_map_()
   , rand_(std::random_device()())
   , master_socket_(-1), control_socket_(-1)
   , master_thread_(), control_thread_() {
@@ -45,14 +45,20 @@ void SocketMultiplexer::Wait() {
     control_thread_.join();
 }
 
-int SocketMultiplexer::TryConnectActiveSocket() {
+int SocketMultiplexer::TryConnectActiveSocket(int uid) {
   // NOTE: rwlock
-  std::lock_guard<std::mutex> lock(slave_socket_files_lock_);
+  std::lock_guard<std::mutex> lock(slave_files_map_lock_);
 
-  while (slave_socket_files_.size() > 0) {
-    auto it = slave_socket_files_.cbegin();
+  FilesMap::iterator slave_socket_files = slave_files_map_.find(uid);
+  if (slave_socket_files == slave_files_map_.end() || slave_socket_files->second.size() == 0) {
+    std::cout << "No sockets for this user(uid: " << uid << ")" << std::endl;
+    return -1;
+  }
+
+  while (slave_socket_files->second.size() > 0) {
+    auto it = slave_socket_files->second.cbegin();
     {
-      std::uniform_int_distribution<int> selector(0, slave_socket_files_.size() - 1);
+      std::uniform_int_distribution<int> selector(0, slave_socket_files->second.size() - 1);
       for (int i = 0; i < selector(rand_); ++i) {
         ++it;
       }
@@ -61,7 +67,7 @@ int SocketMultiplexer::TryConnectActiveSocket() {
     int fd = ConnectSocket(*it);
     if (fd < 0) {
       std::cout << "Rusted socket " << *it << std::endl;
-      slave_socket_files_.erase(it);
+      slave_socket_files->second.erase(it);
       continue;
     }
     std::cout << "Use socket " << *it << std::endl;
@@ -81,13 +87,26 @@ void SocketMultiplexer::MainLoop() {
     if (master < 0) {
       break;
     }
-    int slave = TryConnectActiveSocket();
-    if (slave < 0) {
-      close(master);
-      continue;
-    }
 
-    std::thread t(SocketCoupler, master, slave);
+    std::thread t([&]() {
+      int uid;
+      int ret = PeekSocketCredentials(master, NULL, &uid, NULL);
+      if (ret < 0) {
+        perror("PeekSocketCredentials");
+        close(master);
+        return;
+      }
+
+      int slave = TryConnectActiveSocket(uid);
+      if (slave < 0) {
+        close(master);
+        return;
+      }
+
+      SocketCoupler(master, slave);
+      close(master);
+      close(slave);
+    });
     t.detach();
   }
   close(master_socket_);
@@ -109,30 +128,41 @@ void SocketMultiplexer::ControlLoop() {
       perror("AcceptSocket()");
       break;
     }
-    while (true) {
-      int recved = recv(control_fd, buf, 1024, 0);
-      if (recved < 0) {
-        perror("recv");
-        close(control_fd);
-        break;
-      }
-      if (recved == 0) {
-        break;
-      }
-      std::istringstream iss(std::string(buf, recved));
-      std::string line;
-      while (std::getline(iss, line)) {
-        std::string result = DispatchCommand(line);
-        send(control_fd, result.c_str(), result.size(), 0);
-      }
-    }
 
-    close(control_fd);
+    std::thread t([&]() {
+      int uid;
+      int ret = PeekSocketCredentials(control_fd, NULL, &uid, NULL);
+      if (ret < 0) {
+        perror("PeekSocketCredentials");
+        close(control_fd);
+        return;
+      }
+
+      while (true) {
+        int recved = recv(control_fd, buf, 1024, 0);
+        if (recved < 0) {
+          perror("recv");
+          close(control_fd);
+          break;
+        }
+        if (recved == 0) {
+          break;
+        }
+        std::istringstream iss(std::string(buf, recved));
+        std::string line;
+        while (std::getline(iss, line)) {
+          std::string result = DispatchCommand(uid, line);
+          send(control_fd, result.c_str(), result.size(), 0);
+        }
+      }
+      close(control_fd);
+    });
+    t.detach();
   }
   close(control_socket_);
 }
 
-std::string SocketMultiplexer::DispatchCommand(const std::string& line) {
+std::string SocketMultiplexer::DispatchCommand(int uid, const std::string& line) {
   std::istringstream iss(line);
   std::string command, arg;
   iss >> command >> std::ws;
@@ -142,47 +172,53 @@ std::string SocketMultiplexer::DispatchCommand(const std::string& line) {
     return Shutdown();
   }
   if (command == "ADD") {
-    return AddSocket(arg);
+    return AddSocket(uid, arg);
   }
   if (command == "DELETE") {
-    return DeleteSocket(arg);
+    return DeleteSocket(uid, arg);
   }
   if (command == "LIST") {
-    return ListSocket();
+    return ListSocket(uid);
   }
   return "Unknwon command " + command + "\n";
 }
 
-std::string SocketMultiplexer::AddSocket(const std::string& socket) {
-  std::cout << "AddSocket('" << socket << "')" << std::endl;
+std::string SocketMultiplexer::AddSocket(int uid, const std::string& socket) {
+  std::cout << "AddSocket(" << uid << ", '" << socket << "')" << std::endl;
   // NOTE: rwlock
-  std::lock_guard<std::mutex> lock(slave_socket_files_lock_);
-  slave_socket_files_.insert(socket);
+  std::lock_guard<std::mutex> lock(slave_files_map_lock_);
+  Files &slave_socket_files = slave_files_map_[uid];
+  slave_socket_files.insert(socket);
   return std::string("ADDed ") + socket + "\n";
 }
 
-std::string SocketMultiplexer::DeleteSocket(const std::string& socket) {
-  std::cout << "DeleteSocket('" << socket << "')" << std::endl;
+std::string SocketMultiplexer::DeleteSocket(int uid, const std::string& socket) {
+  std::cout << "DeleteSocket('" << uid << ", " << socket << "')" << std::endl;
   // NOTE: rwlock
-  std::lock_guard<std::mutex> lock(slave_socket_files_lock_);
-  slave_socket_files_.erase(socket);
+  std::lock_guard<std::mutex> lock(slave_files_map_lock_);
+  Files &slave_socket_files = slave_files_map_[uid];
+  slave_socket_files.erase(socket);
   return std::string("DELETEed ") + socket + "\n";
 }
 
-std::string SocketMultiplexer::ClearSocket() {
-  std::cout << "ClearSocket()" << std::endl;
+std::string SocketMultiplexer::ClearSocket(int uid) {
+  std::cout << "ClearSocket(" << uid << ")" << std::endl;
   // NOTE: rwlock
-  std::lock_guard<std::mutex> lock(slave_socket_files_lock_);
-  std::unordered_set<std::string>().swap(slave_socket_files_);
+  std::lock_guard<std::mutex> lock(slave_files_map_lock_);
+  Files().swap(slave_files_map_[uid]);
   return std::string("CLEARed") + "\n";
 }
 
-std::string SocketMultiplexer::ListSocket() const {
-  std::cout << "ListSocket()" << std::endl;
-  // NOTE: rwlock
-  std::lock_guard<std::mutex> lock(slave_socket_files_lock_);
+std::string SocketMultiplexer::ListSocket(int uid) const {
+  std::cout << "ListSocket(" << uid << ")" << std::endl;
+  // NOTE: rwlock rlock
+  std::lock_guard<std::mutex> lock(slave_files_map_lock_);
+  FilesMap::const_iterator slave_socket_files = slave_files_map_.find(uid);
   std::string result;
-  for (auto it = slave_socket_files_.begin(); it != slave_socket_files_.end(); ++it) {
+  if (slave_socket_files == slave_files_map_.end()) {
+    return result;
+  }
+  for (auto it = slave_socket_files->second.begin(); it != slave_socket_files->second.end(); ++it) {
     result += *it + "\n";
   }
   return result;
