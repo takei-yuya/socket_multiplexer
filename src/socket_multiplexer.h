@@ -41,7 +41,7 @@ private:
   const Config config_;
   typedef std::unordered_set<std::string> Files;
   typedef std::unordered_map<int, Files> FilesMap;
-  mutable std::mutex slave_files_map_lock_;
+  mutable std::mutex slave_files_map_lock_; // FIXME: split to lock for map and locks for each elem
   FilesMap slave_files_map_;
 
   mutable std::mt19937 rand_;

@@ -15,15 +15,6 @@ SocketMultiplexer::SocketMultiplexer(const Config& config)
 }
 
 SocketMultiplexer::~SocketMultiplexer() {
-  if (master_socket_ != -1) {
-    NoINTR([this](){ return close(this->master_socket_); });
-    NoINTR([this](){ return unlink(this->config_.master_socket_path.c_str()); });
-  }
-
-  if (control_socket_ != -1) {
-    NoINTR([this](){ return close(this->control_socket_); });
-    NoINTR([this](){ return unlink(this->config_.control_socket_path.c_str()); });
-  }
 }
 
 void SocketMultiplexer::Run() {
@@ -78,63 +69,68 @@ int SocketMultiplexer::TryConnectActiveSocket(int uid) {
 
 void SocketMultiplexer::MainLoop() {
   master_socket_ = CreateSocket(config_.master_socket_path);
+  Unlinker u_master_socket(config_.master_socket_path);
+  FDCloser c_master_socket(master_socket_);
   if (master_socket_ < 0) {
     return;
   }
 
   while (true) {
-    int master = AcceptSocket(master_socket_);
-    if (master < 0) {
+    int master_fd = AcceptSocket(master_socket_);
+    if (master_fd < 0 && errno == EINVAL) {
+      break;
+    }
+    if (master_fd < 0) {
+      perror("AcceptSocket()");
       break;
     }
 
-    std::thread t([this](int master) {
+    std::thread t([this](int master_fd) {
+      FDCloser c_master_fd(master_fd);
       int uid;
-      int ret = PeekSocketCredentials(master, NULL, &uid, NULL);
+      int ret = PeekSocketCredentials(master_fd, NULL, &uid, NULL);
       if (ret < 0) {
         perror("PeekSocketCredentials");
-        close(master);
         return;
       }
 
-      int slave = this->TryConnectActiveSocket(uid);
-      if (slave < 0) {
-        close(master);
+      int slave_fd = this->TryConnectActiveSocket(uid);
+      FDCloser c_slave_fd(slave_fd);
+      if (slave_fd < 0) {
         return;
       }
 
-      SocketCoupler(master, slave);
-      close(master);
-      close(slave);
-    }, master);
+      SocketCoupler(master_fd, slave_fd);
+    }, master_fd);
     t.detach();
   }
-  close(master_socket_);
 }
 
 void SocketMultiplexer::ControlLoop() {
   control_socket_ = CreateSocket(config_.control_socket_path);
+  Unlinker u_control_socket(config_.control_socket_path);
+  FDCloser c_control_socket(control_socket_);
   if (control_socket_ < 0) {
     return;
   }
 
   while (true) {
     int control_fd = AcceptSocket(control_socket_);
-    if (control_fd == -1 && errno == EINVAL) {
+    if (control_fd < 0 && errno == EINVAL) {
       break;
     }
-    if (control_fd == -1) {
+    if (control_fd < 0) {
       perror("AcceptSocket()");
       break;
     }
 
     std::thread t([this](int control_fd) {
+      FDCloser c_control_fd(control_fd);
       char buf[1024];
       int uid;
       int ret = PeekSocketCredentials(control_fd, NULL, &uid, NULL);
       if (ret < 0) {
         perror("PeekSocketCredentials");
-        close(control_fd);
         return;
       }
 
@@ -142,7 +138,6 @@ void SocketMultiplexer::ControlLoop() {
         int recved = recv(control_fd, buf, 1024, 0);
         if (recved < 0) {
           perror("recv");
-          close(control_fd);
           break;
         }
         if (recved == 0) {
@@ -155,11 +150,9 @@ void SocketMultiplexer::ControlLoop() {
           send(control_fd, result.c_str(), result.size(), 0);
         }
       }
-      close(control_fd);
     }, control_fd);
     t.detach();
   }
-  close(control_socket_);
 }
 
 std::string SocketMultiplexer::DispatchCommand(int uid, const std::string& line) {
@@ -169,6 +162,7 @@ std::string SocketMultiplexer::DispatchCommand(int uid, const std::string& line)
   std::getline(iss, arg);
 
   if (command == "QUIT") {
+    // FIXME: should check uid?
     return Shutdown();
   }
   if (command == "ADD") {
