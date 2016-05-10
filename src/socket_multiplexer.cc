@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "logger.h"
 #include "socket_multiplexer.h"
 #include "socket_utils.h"
 
@@ -23,7 +24,7 @@ void SocketMultiplexer::Run() {
 }
 
 std::string SocketMultiplexer::Shutdown() {
-  std::cout << "Shutdown()" << std::endl;
+  LOG(INFO) << "Shutdown()";
   NoINTR([this](){ return shutdown(this->master_socket_, SHUT_RDWR); });
   NoINTR([this](){ return shutdown(this->control_socket_, SHUT_RDWR); });
   return "";
@@ -42,7 +43,7 @@ int SocketMultiplexer::TryConnectActiveSocket(int uid) {
 
   FilesMap::iterator slave_socket_files = slave_files_map_.find(uid);
   if (slave_socket_files == slave_files_map_.end() || slave_socket_files->second.size() == 0) {
-    std::cout << "No sockets for this user(uid: " << uid << ")" << std::endl;
+    LOG(ERROR) << "No sockets for this user(uid: " << uid << ")";
     return -1;
   }
 
@@ -57,11 +58,11 @@ int SocketMultiplexer::TryConnectActiveSocket(int uid) {
 
     int fd = ConnectSocket(*it);
     if (fd < 0) {
-      std::cout << "Rusted socket " << *it << std::endl;
+      LOG(INFO) << "Rusted socket " << *it;
       slave_socket_files->second.erase(it);
       continue;
     }
-    std::cout << "Use socket " << *it << std::endl;
+    LOG(INFO) << "Use socket " << *it;
     return fd;
   }
   return -1;
@@ -178,7 +179,7 @@ std::string SocketMultiplexer::DispatchCommand(int uid, const std::string& line)
 }
 
 std::string SocketMultiplexer::AddSocket(int uid, const std::string& socket) {
-  std::cout << "AddSocket(" << uid << ", '" << socket << "')" << std::endl;
+  LOG(INFO) << "AddSocket(" << uid << ", '" << socket << "')";
   // NOTE: rwlock
   std::lock_guard<std::mutex> lock(slave_files_map_lock_);
   Files &slave_socket_files = slave_files_map_[uid];
@@ -187,7 +188,7 @@ std::string SocketMultiplexer::AddSocket(int uid, const std::string& socket) {
 }
 
 std::string SocketMultiplexer::DeleteSocket(int uid, const std::string& socket) {
-  std::cout << "DeleteSocket('" << uid << ", " << socket << "')" << std::endl;
+  LOG(INFO) << "DeleteSocket('" << uid << ", " << socket << "')";
   // NOTE: rwlock
   std::lock_guard<std::mutex> lock(slave_files_map_lock_);
   Files &slave_socket_files = slave_files_map_[uid];
@@ -196,7 +197,7 @@ std::string SocketMultiplexer::DeleteSocket(int uid, const std::string& socket) 
 }
 
 std::string SocketMultiplexer::ClearSocket(int uid) {
-  std::cout << "ClearSocket(" << uid << ")" << std::endl;
+  LOG(INFO) << "ClearSocket(" << uid << ")";
   // NOTE: rwlock
   std::lock_guard<std::mutex> lock(slave_files_map_lock_);
   Files().swap(slave_files_map_[uid]);
@@ -204,7 +205,7 @@ std::string SocketMultiplexer::ClearSocket(int uid) {
 }
 
 std::string SocketMultiplexer::ListSocket(int uid) const {
-  std::cout << "ListSocket(" << uid << ")" << std::endl;
+  LOG(INFO) << "ListSocket(" << uid << ")";
   // NOTE: rwlock rlock
   std::lock_guard<std::mutex> lock(slave_files_map_lock_);
   FilesMap::const_iterator slave_socket_files = slave_files_map_.find(uid);

@@ -3,6 +3,7 @@
 #include <getopt.h>
 #include <iostream>
 
+#include "logger.h"
 #include "socket_multiplexer.h"
 #include "config.h"
 
@@ -65,6 +66,10 @@ int main(int argc, char** argv) {
     }
   }
 
+  Logger::Init(std::cout);
+
+  LOG(INFO) << "Start socket multiplexer";
+
   unlink(config.control_socket_path.c_str());
   unlink(config.master_socket_path.c_str());
 
@@ -77,5 +82,6 @@ int main(int argc, char** argv) {
   socket_multiplexer->Wait();
 
   socket_multiplexer.reset();
+  LOG(INFO) << "Exit";
 }
 
