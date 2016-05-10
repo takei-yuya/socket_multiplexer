@@ -107,8 +107,6 @@ int SelectOne(int fd) {
   return NoINTR([&](){ return select(fd + 1, &rfds, NULL, NULL, NULL); });
 }
 
-#include <iostream>
-
 int PeekSocketCredentials(int fd, int *pid, int *uid, int *gid) {
   union {
     struct cmsghdr cmsg;
