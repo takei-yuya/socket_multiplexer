@@ -6,8 +6,13 @@
 #include <string>
 #include <memory>
 
+#include <errno.h>
+
 #define LOG(level) \
   Logger::GetInstance().OpenLine(#level, __FILE__, __LINE__)
+
+#define ELOG(level, fname, eno) \
+  Logger::GetInstance().OpenLine(#level, __FILE__, __LINE__, fname, eno)
 
 class Logger {
 public:
@@ -44,6 +49,8 @@ public:
   typedef std::shared_ptr<LineCloser> LineCloserPtr;
 
   LineCloserPtr OpenLine(const std::string& level, const std::string& file, int line);
+  LineCloserPtr OpenLine(const std::string& level, const std::string& file, int line,
+                         const std::string& fname, int eno);
   Logger& CloseLine();
 
   template <typename T>

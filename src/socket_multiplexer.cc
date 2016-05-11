@@ -82,7 +82,7 @@ void SocketMultiplexer::MainLoop() {
       break;
     }
     if (master_fd < 0) {
-      perror("AcceptSocket()");
+      ELOG(ERROR, "AcceptSocket()", errno);
       break;
     }
 
@@ -91,13 +91,14 @@ void SocketMultiplexer::MainLoop() {
       int uid;
       int ret = PeekSocketCredentials(master_fd, NULL, &uid, NULL);
       if (ret < 0) {
-        perror("PeekSocketCredentials");
+        ELOG(ERROR, "PeekSocketCredentials()", errno);
         return;
       }
 
       int slave_fd = this->TryConnectActiveSocket(uid);
       FDCloser c_slave_fd(slave_fd);
       if (slave_fd < 0) {
+        ELOG(ERROR, "TryConnectActiveSocket()", errno);
         return;
       }
 
@@ -121,7 +122,7 @@ void SocketMultiplexer::ControlLoop() {
       break;
     }
     if (control_fd < 0) {
-      perror("AcceptSocket()");
+      ELOG(ERROR, "AcceptSocket()", errno);
       break;
     }
 
@@ -131,14 +132,14 @@ void SocketMultiplexer::ControlLoop() {
       int uid;
       int ret = PeekSocketCredentials(control_fd, NULL, &uid, NULL);
       if (ret < 0) {
-        perror("PeekSocketCredentials");
+        ELOG(ERROR, "PeekSocketCredentials()", errno);
         return;
       }
 
       while (true) {
         int recved = recv(control_fd, buf, 1024, 0);
         if (recved < 0) {
-          perror("recv");
+          ELOG(ERROR, "recv", errno);
           break;
         }
         if (recved == 0) {
@@ -162,8 +163,11 @@ std::string SocketMultiplexer::DispatchCommand(int uid, const std::string& line)
   iss >> command >> std::ws;
   std::getline(iss, arg);
 
+  if (command.empty()) {
+    return "";
+  }
   if (command == "QUIT") {
-    // FIXME: should check uid?
+    // FIXME: should check uid? (allow only process owner?)
     return Shutdown();
   }
   if (command == "ADD") {
@@ -175,6 +179,7 @@ std::string SocketMultiplexer::DispatchCommand(int uid, const std::string& line)
   if (command == "LIST") {
     return ListSocket(uid);
   }
+  LOG(ERROR) << "Unknwon command '" << command << "(" << arg << ")'";
   return "Unknwon command " + command + "\n";
 }
 

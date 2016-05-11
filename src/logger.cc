@@ -1,5 +1,6 @@
 #include "logger.h"
 
+#include <cstring>
 #include <sstream>
 #include <iomanip>
 
@@ -36,6 +37,8 @@ Logger::LineCloserPtr Logger::OpenLine(const std::string& level, const std::stri
   std::string file_name = (pos != std::string::npos) ? file.substr(pos+1) : file;
 
   std::ostringstream prefix;
+  // LMMDD HH:mm:dd file:line] msg
+  // L: error level (single char)
   prefix
     << l
     << std::setw(2) << std::setfill('0') << (tm.tm_mon + 1)
@@ -51,6 +54,14 @@ Logger::LineCloserPtr Logger::OpenLine(const std::string& level, const std::stri
 
   out_ << prefix.str();
   return Logger::LineCloserPtr(new LineCloser(*this));
+}
+
+Logger::LineCloserPtr Logger::OpenLine(const std::string& level, const std::string& file, int line,
+                                       const std::string& fname, int eno) {
+  // FIXME: strerror is not thread-safe (if eno is not well-known errno, strerror may construct error message with shared static memory)
+  return OpenLine(level, file, line)
+    <<  fname << ": "
+    << std::strerror(eno) << "(" << eno << ")";
 }
 
 Logger& Logger::CloseLine() {
