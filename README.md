@@ -1,5 +1,5 @@
 - TODO:
-    - logging
+    - logging options
     - error handing
     - README
     - systemd recipe
