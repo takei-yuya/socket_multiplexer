@@ -1,12 +1,9 @@
 #ifndef SOCKET_MULTIPLEXER_LOGGER_H_
 #define SOCKET_MULTIPLEXER_LOGGER_H_
 
-#include <iostream>
 #include <mutex>
 #include <string>
 #include <memory>
-
-#include <errno.h>
 
 #define LOG(level) \
   Logger::GetInstance().OpenLine(#level, __FILE__, __LINE__)

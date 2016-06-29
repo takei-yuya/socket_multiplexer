@@ -2,7 +2,10 @@
 
 #include <cstring>
 #include <sstream>
+#include <iostream>
 #include <iomanip>
+
+#include <errno.h>
 
 void Logger::Init(std::ostream& out) {
   std::lock_guard<std::mutex> lock(instance_mutex);
