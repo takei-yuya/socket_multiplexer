@@ -1,5 +1,5 @@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS=build
+SUBDIRS=src
 
 sysconfigdir=@sysconfdir@/sysconfig
 sysconfig_DATA=sysconfig/socket_multiplexer

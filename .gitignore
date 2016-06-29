@@ -32,7 +32,7 @@ Makefile.in
 
 /config.h
 /Makefile
-/build/Makefile
+/src/Makefile
 socket_multiplexer
 
 sysconfig/socket_multiplexer
