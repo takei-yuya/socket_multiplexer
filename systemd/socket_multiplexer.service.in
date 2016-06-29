@@ -1,0 +1,11 @@
+[Unit]
+Description=Socket Multiplexer daemon
+
+[Service]
+EnvironmentFile=@prefix@/etc/sysconfig/socket_multiplexer
+ExecStart=@prefix@/bin/socket_multiplexer --control=${SOCKET_MULTIPLEXER_CONTROL_SOCK} --socket=${SOCKET_MULTIPLEXER_SOCK}
+Restart=always
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

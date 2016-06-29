@@ -73,6 +73,7 @@ void SocketMultiplexer::MainLoop() {
   Unlinker u_master_socket(config_.master_socket_path);
   FDCloser c_master_socket(master_socket_);
   if (master_socket_ < 0) {
+    ELOG(ERROR, "CreateSocket()", errno);
     return;
   }
 
@@ -113,6 +114,7 @@ void SocketMultiplexer::ControlLoop() {
   Unlinker u_control_socket(config_.control_socket_path);
   FDCloser c_control_socket(control_socket_);
   if (control_socket_ < 0) {
+    ELOG(ERROR, "CreateSocket()", errno);
     return;
   }
 

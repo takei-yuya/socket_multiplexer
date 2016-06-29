@@ -3,10 +3,23 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/stat.h>
+#include <libgen.h>
 
+#include <vector>
 #include <functional>
 
+namespace {
+std::string Dirname(const std::string& path) {
+  std::vector<char> buf(path.begin(), path.end());
+  return std::string(dirname(buf.data()));
+}
+}  // namespace
+
 int CreateSocket(const std::string& socket_name) {
+  // TODO(takei): check existent of parent directory and skip mkdir.
+  // TODO(takei): check existent of ancestor directories and create.
+  NoINTR([&](){ return mkdir(Dirname(socket_name).c_str(), 0755); });
+
   int sock = NoINTR([&](){ return socket(AF_UNIX, SOCK_STREAM, 0); });
   if (sock < 0) {
     return -1;

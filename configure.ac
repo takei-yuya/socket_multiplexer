@@ -29,5 +29,8 @@ AC_CHECK_HEADER_STDBOOL
 AC_CHECK_FUNCS([select socket])
 
 AC_CONFIG_FILES([Makefile
-                 build/Makefile])
+                 build/Makefile
+                 systemd/socket_multiplexer.service
+                 sysconfig/socket_multiplexer
+                 ])
 AC_OUTPUT
