@@ -3,9 +3,9 @@
 #include <iostream>
 #include <sstream>
 
-#include "logger.h"
-#include "socket_multiplexer.h"
-#include "socket_utils.h"
+#include "logger.hpp"
+#include "socket_multiplexer.hpp"
+#include "socket_utils.hpp"
 
 SocketMultiplexer::SocketMultiplexer(const Config& config)
   : config_(config)

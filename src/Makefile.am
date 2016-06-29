@@ -3,12 +3,12 @@ bin_PROGRAMS= socket_multiplexer
 AM_CXXFLAGS= -Wall -Wextra -Weffc++ -Wno-missing-field-initializers
 
 socket_multiplexer_SOURCES = \
-  $(top_srcdir)/src/main.cc \
-  $(top_srcdir)/src/logger.cc \
-  $(top_srcdir)/src/logger.h \
-  $(top_srcdir)/src/socket_multiplexer.cc \
-  $(top_srcdir)/src/socket_multiplexer.h \
-  $(top_srcdir)/src/socket_utils.cc \
-  $(top_srcdir)/src/socket_utils.h
+  main.cpp \
+  logger.cpp \
+  logger.hpp \
+  socket_multiplexer.cpp \
+  socket_multiplexer.hpp \
+  socket_utils.cpp \
+  socket_utils.hpp
 socket_multiplexer_CPPFLAGS= \
   -I$(top_srcdir)/src

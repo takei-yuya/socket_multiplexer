@@ -3,8 +3,8 @@
 #include <getopt.h>
 #include <iostream>
 
-#include "logger.h"
-#include "socket_multiplexer.h"
+#include "logger.hpp"
+#include "socket_multiplexer.hpp"
 #include "config.h"
 
 namespace {
