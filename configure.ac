@@ -30,7 +30,7 @@ AC_CHECK_FUNCS([select socket])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
-                 systemd/socket_multiplexer.service
+                 systemd/socket_multiplexer@.service
                  sysconfig/socket_multiplexer
                  ])
 AC_OUTPUT

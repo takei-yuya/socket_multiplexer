@@ -5,4 +5,4 @@ sysconfigdir=@sysconfdir@/sysconfig
 sysconfig_DATA=sysconfig/socket_multiplexer
 
 systemddir=@libdir@/systemd/system
-systemd_DATA=systemd/socket_multiplexer.service
+systemd_DATA=systemd/socket_multiplexer@.service
